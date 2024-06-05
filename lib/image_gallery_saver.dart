@@ -20,7 +20,7 @@ class ImageGallerySaver {
       'quality': quality,
       'name': name,
       'isReturnImagePathOfIOS': isReturnImagePathOfIOS,
-      'isReturnImageLocalIdentifier': isReturnImageLocalIdentifier
+      'isReturnImageLocalIndentifierOfIOS': isReturnImageLocalIdentifier
     });
     return result;
   }
@@ -33,7 +33,7 @@ class ImageGallerySaver {
       'file': file,
       'name': name,
       'isReturnPathOfIOS': isReturnPathOfIOS,
-      'isReturnImageLocalIdentifier': isReturnImageLocalIdentifier
+      'isReturnImageLocalIndentifierOfIOS': isReturnImageLocalIdentifier
     });
     return result;
   }

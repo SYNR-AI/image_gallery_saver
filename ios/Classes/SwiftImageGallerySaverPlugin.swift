@@ -21,9 +21,12 @@ public class SwiftImageGallerySaverPlugin: NSObject, FlutterPlugin {
             let image = UIImage(data: imageData),
             let quality = arguments["quality"] as? Int,
             let _ = arguments["name"],
-            let isReturnImagePath = arguments["isReturnImagePathOfIOS"] as? Bool
+            let isReturnImagePath = arguments["isReturnImagePathOfIOS"] as? Bool,
             let isReturnImageLocalIndentifier = arguments["isReturnImageLocalIndentifierOfIOS"] as? Bool
-            else { return }
+          else {
+            self.saveResult(isSuccess: false, error: "arguments is invalid")
+            return
+        }
         let newImage = image.jpegData(compressionQuality: CGFloat(quality / 100))!
         saveImage(UIImage(data: newImage) ?? image, isReturnImagePath: isReturnImagePath, isReturnImageLocalIndentifier:isReturnImageLocalIndentifier)
       } else if (call.method == "saveFileToGallery") {
@@ -31,12 +34,15 @@ public class SwiftImageGallerySaverPlugin: NSObject, FlutterPlugin {
               let path = arguments["file"] as? String,
               let _ = arguments["name"],
               let isReturnFilePath = arguments["isReturnPathOfIOS"] as? Bool,
-              let isReturnImageLocalIndentifier = arguments["isReturnImageLocalIndentifierOfIOS"] as? Bool else { return }
+              let isReturnImageLocalIndentifier = arguments["isReturnImageLocalIndentifierOfIOS"] as? Bool else {
+            self.saveResult(isSuccess: false, error: "arguments is invalid")
+            return
+        }
         if (isImageFile(filename: path)) {
-            saveImageAtFileUrl(path, isReturnImagePath: isReturnFilePath)
+            saveImageAtFileUrl(path, isReturnImagePath: isReturnFilePath, isReturnImageLocalIndentifier: isReturnImageLocalIndentifier)
         } else {
             if (UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(path)) {
-                saveVideo(path, isReturnImagePath: isReturnFilePath)
+                saveVideo(path, isReturnImagePath: isReturnFilePath, isReturnImageLocalIndentifier: isReturnImageLocalIndentifier)
             }else{
                 self.saveResult(isSuccess:false,error:self.errorMessage)
             }
@@ -46,7 +52,7 @@ public class SwiftImageGallerySaverPlugin: NSObject, FlutterPlugin {
       }
     }
 
-    func saveVideo(_ path: String, isReturnImagePath: Bool, isReturnImageLocalIndentifier) {
+    func saveVideo(_ path: String, isReturnImagePath: Bool, isReturnImageLocalIndentifier: Bool) {
         if !isReturnImagePath && !isReturnImageLocalIndentifier {
             UISaveVideoAtPathToSavedPhotosAlbum(path, self, #selector(didFinishSavingVideo(videoPath:error:contextInfo:)), nil)
             return
@@ -64,7 +70,7 @@ public class SwiftImageGallerySaverPlugin: NSObject, FlutterPlugin {
                     let assetResult = PHAsset.fetchAssets(withLocalIdentifiers: videoIds, options: nil)
                     if (assetResult.count > 0) {
                         let videoAsset = assetResult[0]
-                        if (isReturnImageLocalIndentifier && !isReturnFilePath) {
+                        if (isReturnImageLocalIndentifier && !isReturnImagePath) {
                             self.saveResult(isSuccess: true, localIdentifier: videoAsset.localIdentifier)
                         } else {
                             PHImageManager().requestAVAsset(forVideo: videoAsset, options: nil) { (avurlAsset, audioMix, info) in
@@ -83,7 +89,7 @@ public class SwiftImageGallerySaverPlugin: NSObject, FlutterPlugin {
     }
 
     func saveImage(_ image: UIImage, isReturnImagePath: Bool, isReturnImageLocalIndentifier: Bool = false) {
-        if !isReturnImagePath && ! isReturnImageLocalIndentifier {
+        if !isReturnImagePath && !isReturnImageLocalIndentifier {
             UIImageWriteToSavedPhotosAlbum(image, self, #selector(didFinishSavingImage(image:error:contextInfo:)), nil)
             return
         }
@@ -101,7 +107,7 @@ public class SwiftImageGallerySaverPlugin: NSObject, FlutterPlugin {
                     let assetResult = PHAsset.fetchAssets(withLocalIdentifiers: imageIds, options: nil)
                     if (assetResult.count > 0) {
                         let imageAsset = assetResult[0]
-                        if (isReturnImageLocalIndentifier && !isReturnFilePath) {
+                        if (isReturnImageLocalIndentifier && !isReturnImagePath) {
                               self.saveResult(isSuccess: true, localIdentifier: imageAsset.localIdentifier)
                         } else {
                          let options = PHContentEditingInputRequestOptions()
@@ -142,7 +148,7 @@ public class SwiftImageGallerySaverPlugin: NSObject, FlutterPlugin {
                     let assetResult = PHAsset.fetchAssets(withLocalIdentifiers: imageIds, options: nil)
                     if (assetResult.count > 0) {
                         let imageAsset = assetResult[0]
-                        if (isReturnImageLocalIndentifier && !isReturnFilePath) {
+                        if (isReturnImageLocalIndentifier && !isReturnImagePath) {
                             self.saveResult(isSuccess: true, localIdentifier: imageAsset.localIdentifier)
                         } else {
                          let options = PHContentEditingInputRequestOptions()
@@ -176,6 +182,7 @@ public class SwiftImageGallerySaverPlugin: NSObject, FlutterPlugin {
         saveResult.isSuccess = error == nil
         saveResult.errorMessage = error?.description
         saveResult.filePath = filePath
+        saveResult.localIdentifier = localIdentifier
         result?(saveResult.toDic())
     }
 
